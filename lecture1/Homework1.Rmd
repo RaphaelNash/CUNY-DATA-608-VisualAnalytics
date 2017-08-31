@@ -1,0 +1,142 @@
+---
+title: "CUNY Data 608 HW1 GGplot Intro"
+author: "Raphael Nash"
+output: html_notebook
+---
+
+```{r}
+library("ggplot2")
+library("dplyr")
+```
+
+```{r}
+
+companies_df <- read.csv("https://raw.githubusercontent.com/RaphaelNash/CUNY-DATA-608-VisualAnalytics/master/lecture1/Data/inc5000_data.csv")
+
+```
+
+Create a graph that shows the distribution of companies in the dataset by State (ie
+how many are in each state). There are a lot of States, so consider which axis you
+should use assuming I am using a ‘portrait’ oriented screen (ie taller than wide).
+
+```{r fig.height=15, fig.width=15 }
+
+companies_by_state_df <- 
+  group_by(companies_df, State) %>% 
+  summarise(n = n()) %>% 
+  arrange((n)) %>% 
+  mutate(State = factor(State, State)) 
+  
+
+
+
+
+ggplot(companies_by_state_df, aes(x=State, y=n)) +
+  geom_bar(stat="identity", position=position_dodge(.09), colour="black", width = .09) +  
+  coord_flip() +
+  theme_classic() + 
+  theme(axis.text=element_text(size=14),
+        axis.title=element_text(size=20),
+        plot.title = element_text(size = 20 , hjust = .5),
+        axis.ticks.x =element_blank() ,
+        axis.text.x =element_blank() 
+        ) + 
+  ylab ( "# of Companies") + 
+  ggtitle ("Companies per State") +
+  geom_text(aes(label=n) , colour="black" , size  = 5 , hjust= -.5)  
+
+```
+
+```{r}
+
+ggsave("Figure2.png")
+
+```
+
+
+```{r}
+
+companies_comp_cases_df <- companies_df[complete.cases(companies_df), ]
+
+avg_emp_per_co_ny_df <- 
+  filter(companies_comp_cases_df, State == 'NY') %>% 
+  group_by (Industry) %>% 
+  summarise(avg_employees = sum(Employees)/n()) %>% 
+  arrange(avg_employees) %>% 
+  mutate(Industry = factor(Industry, Industry)) 
+
+ggplot(avg_emp_per_co_ny_df, aes(x=Industry, y=avg_employees)) +
+  geom_bar(stat="identity", position=position_dodge(.09), colour="black", width = .09) +  
+  theme_classic() + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", width = 0.5) +  
+  coord_flip() + theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=14), 
+          axis.ticks.x =element_blank() ,
+        axis.text.x =element_blank() 
+        
+        )  +
+    geom_text(aes(label=round(avg_employees,0) ) , colour="black" , size  = 3 , hjust= -.13) +
+  ylab( "Average Number of Employees") + 
+  ggtitle ("NY State Average Company Size by Industry ") 
+```
+```{r}
+ggsave("Figure2.png")
+
+```
+
+
+```{r}
+
+companies_comp_cases_df <- companies_df[complete.cases(companies_df), ]
+
+avg_emp_per_co_ny_df <- 
+  filter(companies_df, State == 'NY') %>% 
+  group_by (Industry) %>% 
+  summarise(avg_employees = sum(Employees)/n()) %>% 
+  arrange(avg_employees) %>% 
+  mutate(Industry = factor(Industry, Industry)) 
+
+ggplot(avg_emp_per_co_ny_df, aes(x=Industry, y=avg_employees)) +
+    theme_classic() + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", width = 0.5) +  
+  coord_flip() + theme(axis.text=element_text(size=10),
+                       axis.title=element_text(size=14), 
+                       axis.ticks.x =element_blank() ,
+                       axis.text.x =element_blank() )  +
+  geom_text(
+    aes(label=round(avg_employees,0) ) , colour="black" , size  = 3 , hjust= -.2) +
+  ggtitle ("NY State Avg Employees per Company")  + 
+  ylab("Avg Employees/Company")
+
+  
+
+```
+
+
+```{r  fig.width=10}
+
+companies_comp_cases_df <- companies_df[complete.cases(companies_df), ]
+
+avg_rev_per_emp_by_industry_df <- 
+  group_by (companies_comp_cases_df, Industry) %>% 
+  summarise(avg_rev_per_emp = sum(Revenue)/sum(Employees)) %>% 
+  arrange(avg_rev_per_emp) %>% 
+  mutate(Industry = factor(Industry, Industry)) 
+
+ggplot(avg_rev_per_emp_by_industry_df, aes(x=Industry, y=avg_rev_per_emp)) +
+  geom_bar(stat="identity", position=position_dodge(.09), colour="black", width = .09) +  
+  theme_classic() + 
+  geom_bar(stat="identity", position=position_dodge(), colour="black", width = 0.5) +  
+  coord_flip() + theme(axis.text=element_text(size=10),
+                       axis.title=element_text(size=14), 
+                       axis.ticks.x =element_blank() ,
+                       axis.text.x =element_blank() )  +
+  geom_text(
+    aes(label=round(avg_rev_per_emp/1000,0) ) , colour="black" , size  = 3 , hjust= -.2) +
+  ggtitle ("Revenue per Employee")  + 
+  ylab("Revenue per Employee in ($1000)")
+```
+```{r}
+ggsave("Figure3.png")
+
+```
