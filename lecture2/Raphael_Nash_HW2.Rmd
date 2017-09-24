@@ -1,0 +1,169 @@
+---
+title: "CUNY Data 608 HW2"
+author: "Raphael Nash"
+date: "9/8/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library("dplyr")
+options(scipen=999)
+library(ggplot2)
+library("ggthemes")
+```
+```{r}
+
+
+pdata <- read.csv("BK.csv")
+pdata <- rbind(pdata,read.csv("BX.csv") ) 
+pdata <- rbind(pdata,read.csv("MN.csv"))
+pdata <- rbind(pdata,read.csv("QN.csv"))
+pdata <- rbind(pdata,read.csv("SI.csv"))
+```
+
+```{r}
+
+pdata
+```
+```{r}
+
+pdata <- subset(pdata, YearBuilt>=1850)
+NROW (pdata)
+```
+
+
+1. After a few building collapses, the City of New York is going to begin investigating older
+buildings for safety. However, the city has a limited number of inspectors, and wants to find a
+cut-off date before most city buildings were constructed. Build a graph to help the city
+determine when most buildings were constructed. Is there anything in the results that causes
+you to question the accuracy of the data? (note: only look at buildings built since 1850)
+
+
+```{r}
+pdata_cnt_by_yr <- 
+  group_by(pdata, YearBuilt) %>% 
+  summarise(n = n())  %>% 
+  mutate(cumsum = cumsum(n), cum_percentage = cumsum(n)/NROW(pdata)  ) 
+
+
+pdata_cnt_by_yr
+```
+
+Most buildings where built before this year:
+```{r}
+half_buildings_before <- min(subset(pdata_cnt_by_yr, cum_percentage > .50)[,"YearBuilt"])
+half_buildings_before
+```
+```{r}
+pdata_cnt_by_yr[,'color'] <- NA
+pdata_cnt_by_yr$color[pdata_cnt_by_yr$YearBuilt<half_buildings_before] <- "red"
+pdata_cnt_by_yr$color[pdata_cnt_by_yr$YearBuilt>=half_buildings_before] <- "green"
+
+
+```
+
+```{r}
+
+
+ggplot(pdata_cnt_by_yr, aes(x=YearBuilt, y=cum_percentage))+
+  geom_point(color = pdata_cnt_by_yr$color) +
+  geom_vline(xintercept= half_buildings_before) +
+  geom_text(aes(x=half_buildings_before, label= paste( half_buildings_before,  " -->",   sep = "") , y=.6), hjust = 1.1) +
+  geom_text(aes(x=half_buildings_before, label=  "50% Percentile",    y=.6), hjust = 1.1, vjust = -2) +
+  ylab("Cumulative Percentage") +
+  xlab("Year") +
+  theme_tufte() +
+  ggtitle("Cumulative percentage of buildings built per year in NYC") + 
+  geom_text(aes(y= .80, x = 2040, label = "year 2040 ? --> "), angle = "90" , color = "red" ) +
+  geom_text(aes(y= .25, x = 1890, label = "Data not continuous --> ") , color = "red" ) + 
+  geom_text(aes(y= .20, x = 1880, label = "means data is binned ") , color = "red" )
+
+ggsave("Raphael_Nash_Figure_1.png")
+
+```
+
+
+2. The city is particularly worried about buildings that were unusually tall when they were
+built, since best-practices for safety hadn???t yet been determined. Create a graph that shows
+how many buildings of a certain number of floors were built in each year (note: you may
+want to use a log scale for the number of buildings). It should be clear when 20-story
+buildings, 30-story buildings, and 40-story buildings were first built in large numbers.
+
+```{r}
+
+pdata_floors <- pdata
+pdata_floors <- subset(pdata, NumFloors > 19 )
+pdata_floors$floors_range[pdata_floors$NumFloors>=20 & pdata_floors$NumFloors < 30 ] <- "20 Story"
+pdata_floors$floors_range[pdata_floors$NumFloors>=30 & pdata_floors$NumFloors < 40 ] <- "30 Story"
+pdata_floors$floors_range[pdata_floors$NumFloors>=40  ] <- "40+ Story"
+
+pdata_floors <- 
+  group_by(pdata_floors, YearBuilt, floors_range)  %>% 
+  summarise(n = n())  
+
+pdata_floors$floors_range <- factor(pdata_floors$floors_range)
+pdata_floors
+```
+
+```{r}
+
+
+ggplot(pdata_floors , aes(x=YearBuilt, y=n, colour=floors_range, fill= floors_range)) + geom_bar(stat="identity")  +
+  facet_grid( floors_range ~.) + 
+  ggtitle( "Number of Buildings built per year ") + 
+  xlab("Year") + ylab("# of Buildings Built") +
+
+  geom_vline(data=data.frame(xint=1900,floors_range="20 Story"),aes(xintercept=xint),linetype="dotted") +
+  geom_text(data=data.frame(x=1908, y = 40, floors_range="20 Story"),aes(x=x,y=y, label = "<-- 1900"),color="red") +
+  geom_vline(data=data.frame(xint=1910,floors_range="30 Story"),aes(xintercept=xint),linetype="dotted") +
+  geom_text(data=data.frame(x=1918, y = 40, floors_range="30 Story"),aes(x=x,y=y, label = "<-- 1910"),color="red")  +
+  geom_vline(data=data.frame(xint=1956,floors_range="30 Story"),aes(xintercept=xint),linetype="dotted") +
+  geom_text(data=data.frame(x=1964, y = 40, floors_range="30 Story"),aes(x=x,y=y, label = "<-- 1956"),color="red")  +
+  geom_vline(data=data.frame(xint=1925,floors_range="40+ Story"),aes(xintercept=xint),linetype="dotted") +
+  geom_text(data=data.frame(x=1933, y = 40, floors_range="40+ Story"),aes(x=x,y=y, label = "<-- 1925"),color="red")  +
+  geom_vline(data=data.frame(xint=1963,floors_range="40+ Story"),aes(xintercept=xint),linetype="dotted") +
+  geom_text(data=data.frame(x=1971, y = 40, floors_range="40+ Story"),aes(x=x,y=y, label = "<-- 1963"),color="red")  +
+  theme_tufte() +
+  theme(legend.position="none") 
+
+
+ggsave("Raphael_Nash_Figure_2.png")
+ 
+```
+
+
+
+```{r}
+
+wwwII_data <-  subset(pdata, YearBuilt>=1936 & YearBuilt<=1950) 
+wwwII_data$time_period[wwwII_data$YearBuilt>=1936 & wwwII_data$YearBuilt <= 1940 ] <- "Before WWII"
+wwwII_data$time_period[wwwII_data$YearBuilt>=1941 & wwwII_data$YearBuilt <= 1945 ] <- "Durring WWII"
+wwwII_data$time_period[wwwII_data$YearBuilt>=1946 & wwwII_data$YearBuilt <= 1951 ] <- "Post WWII"
+
+wwwII_data$time_period <- factor(wwwII_data$time_period)
+
+wwwII_data %>% 
+    mutate  ( value_per_sq_ft  =( AssessTot - AssessLand) / (BldgArea) ) 
+
+
+```
+
+
+```{r}
+
+ggplot(wwwII_data, aes(x= ( AssessTot - AssessLand) / (BldgArea), color=time_period)) +
+  geom_freqpoly(binwidth = 1 ) +xlim ( 0, 20 ) + theme_tufte() +
+  xlab("Assessed Value/Sq Ft") +
+  ylab("Number of Buildings") +
+  ggtitle( "Histogram of Building Assessment")  + 
+  geom_text(aes(y= 1000, x = 11, label = "Dip in construction during WWII ") , color = "red" ) +
+  geom_text(aes(y= 800, x = 12, label = "not value ") , color = "red" )
+
+ggsave("Raphael_Nash_Figure_3.png")
+```
