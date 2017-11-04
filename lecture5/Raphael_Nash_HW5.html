@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.min.js"></script>
+
+<script type="text/javascript">
+
+
+
+
+
+
+    function reverseButtonAction(){
+        var t = document.getElementById("reversedText");
+        var w = document.getElementById('word').value;
+        t.innerHTML = "The word " + w + " Reversed is: " + reverse(w);
+    }
+
+    function reverse(w) {
+
+        var array = w.split('');
+        var arrayReversed = array.reverse();
+        return arrayReversed.join("");
+    }
+
+
+    function createMultiples (){
+        var n = document.getElementById("numForMultiples").value;
+        var htmlStr = "<table> <tr>";
+        var rowItemCount = 0;
+        var currentResult = 0;
+
+        for ( i = 1; i<=20; i++) {
+
+            currentResult = i* n ;
+
+            if (rowItemCount <3 ) {
+                rowItemCount ++;
+                htmlStr = htmlStr + "<td>" + currentResult + "</td>";
+            } else {
+
+                if ( i == 20 ) {
+                    htmlStr = htmlStr +   "<td>" + currentResult + "</td></tr> </table>"
+                } else {
+                    rowItemCount = 0;
+                    htmlStr = htmlStr + "<td>" + currentResult + "</td></tr><tr>";
+                }
+            }
+        }
+
+        document.getElementById('multiplesTable').innerHTML = htmlStr;
+
+    }
+
+    var presidents;
+
+    d3.csv('https://raw.githubusercontent.com/RaphaelNash/CUNY-DATA-608-VisualAnalytics/master/lecture5/presidents.csv', function(data) {
+        presidents = data;
+        var columns = ['Name', 'Height', 'Weight'];
+        createTable(data, columns, '#presTable');
+        createOptionBox(data, '#presSelect')
+    });
+
+    var createOptionBox = function (data, divTag)
+    {
+        var select = d3.select(divTag)
+            .append('select')
+            .on('change',onchange)
+
+        options = select.selectAll('select').data(['Please Select'])
+
+            .enter()
+            .append('option')
+            .text(function (d) {
+                return d;
+            })
+            .attr('selected', 'selected')
+            .attr('disabled', 'true')
+        ;
+
+
+
+        options = select
+            .selectAll('select')
+
+
+            .data(data)
+
+            .enter()
+            .append('option')
+            .text(function (d) {
+                return d.Name;
+            })
+            .attr('value', function (d,i) {
+                return i;
+            })
+        ;
+
+
+
+    }
+
+
+
+    var createTable = function (data,columns, divTag) {
+
+        // NOTE:  This function was copied from the following web page:
+        // https://gist.github.com/dweinstein/d83210604f307cb80dc9
+
+        var table = d3.select(divTag).append('table')
+        var thead = table.append('thead')
+        var tbody = table.append('tbody')
+
+        thead.append('tr')
+            .selectAll('th')
+            .data(columns)
+            .enter()
+            .append('th')
+            .text(function (d) { return d })
+
+        var rows = tbody.selectAll('tr')
+            .data(data)
+            .enter()
+            .append('tr')
+
+        var cells = rows.selectAll('td')
+            .data(function(row) {
+                return columns.map(function (column) {
+                    return { column: column, value: row[column] }
+                })
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value })
+
+        return table;
+    }
+
+
+
+    function onchange() {
+        i = Number((d3.select('select').property('value')))
+        d3.selectAll('#outText').text('Height: ' + presidents[i].Height + '" Weight: ' + presidents[i].Weight + 'lb');
+
+
+    };
+
+
+</script>
+
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<H1>Intro to Javascript Homework</H1>
+Raphael Nash<br>
+CUNY DATA 608<br>
+<p>
+
+<H2>Beginner Homework</H2>
+<bold> Part 1: </bold>
+Enter A word to be reversed:
+<form>
+    <input id="word" type="text" size="20">
+    <input type="button" value="reverse" onClick="reverseButtonAction();">
+</form>
+</p>
+
+<div id="reversedText"></div>
+
+<br>
+
+<bold> Part 2: </bold>
+<br>
+
+Enter a number that you want the first 20 multiples of:
+<input id="numForMultiples" type="number" size="20">
+<input type="button" value="Create Multiples"  onClick="createMultiples();">
+
+<br>
+<div id="multiplesTable"></div>
+
+<hr>
+
+<h2>Intermediate Homework:</h2>
+
+<bold>Part 1:</bold>
+<br>
+The following presidents are in the csv file:
+<div id="presTable"></div>
+
+<br>
+<bold>Part 2:</bold>
+Please Select a President:
+<div id="presSelect"></div>
+<div id="outText"></div>
+
+<br>
+<br>
+
+
+</body>
+
